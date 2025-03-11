@@ -277,21 +277,17 @@ void ball_physics() {
         x += vx/speed;
         y += vy/speed;
 
+        float boost = 1.0;
+        if (speed < max_speed) boost = 1.1;
+
         if(upper_hit){ vy = -vy; play_sound(1); }
         if(lower_hit){ vy = -vy; play_sound(1); }
-        if(left_hit){ vx = -vx*1.5; vy = bump(vy, pad0.ymotion); play_sound(2); }
-        if(right_hit){ vx = -vx*1.5; play_sound(2); }
+        if(left_hit){ vx = -vx*boost; vy = bump(vy, pad0.ymotion) * boost; play_sound(2); }
+        if(right_hit){ vx = -vx*boost; vy *= boost; play_sound(2); }
         if(left_goal){ ball.enable = 0; score[1]++; serve_timer = 100; play_sound(3); break; }
         if(right_goal){ ball.enable = 0; score[0]++; serve_timer = 100; play_sound(3); break; }
 
         speed = sqrt(vx*vx + vy*vy);
-
-        if (speed > max_speed) {
-            vx /= speed;
-            vy /= speed;
-            vx *= max_speed;
-            vy *= max_speed;
-        }
     }
 
 
