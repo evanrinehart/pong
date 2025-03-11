@@ -328,9 +328,10 @@ void player_control() {
 void computer_control() {
     /* sets computer players pad to Y coordinate of ball
     making the computer unbeatable */
-    float delta = ball.y - pad1.y;
-    pad1.y = ball.y;
-    pad1.ymotion = delta;
+    float weight = 0.1;
+    float new_y = weight * ball.y + (1.0 - weight) * pad1.y;
+    pad1.ymotion = new_y - pad1.y;
+    pad1.y = new_y;
 }
 
 
