@@ -31,7 +31,7 @@ struct ball {
     int enable;
 };
 
-struct ball ball = {0, 0, 5, 0, 1, 1};
+struct ball ball = {0, 0, 5, 0, 1, 0};
 
 struct pad {
     float x;
@@ -46,6 +46,7 @@ struct pad pad1 = {right - standoff - thickness/2, 0, thickness, 100, 0};
 
 int score[2] = {0,0};
 int serve_timer = 0;
+int start_menu = 1;
 
 struct generator {
     int life;
@@ -308,7 +309,7 @@ void serve_routine() {
 
         ball.x = 0;
         ball.y = 0;
-        ball.vx = 5;
+        ball.vx = (randf() < 0.5 ? -1 : 1) * 5;
         ball.vy = 10 * randf() - 10;
         ball.enable = 1;
 
@@ -325,13 +326,48 @@ void player_control() {
     pad0.ymotion = motion.y;
 }
 
-void computer_control() {
-    /* sets computer players pad to Y coordinate of ball
-    making the computer unbeatable */
-    float weight = 0.1;
-    float new_y = weight * ball.y + (1.0 - weight) * pad1.y;
-    pad1.ymotion = new_y - pad1.y;
-    pad1.y = new_y;
+void computer_control_none() {
+}
+
+void computer_control_slow() {
+    float w = 0.12;
+    pad1.y = w * ball.y + (1.0 - w) * pad1.y;
+}
+
+void computer_control_perfect() {
+    pad1.y = ball.y;
+    float bound = WIN_H/2 - pad1.length/2;
+    if(pad1.y < -bound) pad1.y = -bound;
+    if(pad1.y >  bound) pad1.y =  bound;
+}
+
+void computer_control_random() {
+    /* computer pad is placed randomly every frame */
+    pad1.y = (float)(rand() - RAND_MAX/2) / (RAND_MAX/2) * WIN_H/2;
+    float bound = WIN_H/2 - pad1.length/2;
+    if(pad1.y < -bound) pad1.y = -bound;
+    if(pad1.y >  bound) pad1.y =  bound;
+}
+
+void (*computer_control)() = computer_control_none;
+
+
+void choose_opponent(int n) {
+    if(n == 1){
+        computer_control = computer_control_slow;
+    }
+    else if(n == 2) {
+        computer_control = computer_control_random;
+    }
+    else if(n == 3) {
+        computer_control = computer_control_perfect;
+        pad1.length = 10;
+    }
+    else {
+        computer_control = computer_control_slow;
+    }
+    start_menu = 0;
+    ball.enable = 1;
 }
 
 
@@ -357,6 +393,12 @@ int main(int argc, char * argv[]) {
         player_control();
         computer_control();
 
+        if(start_menu) {
+            if(IsKeyDown(KEY_ONE)) choose_opponent(1);
+            if(IsKeyDown(KEY_TWO)) choose_opponent(2);
+            if(IsKeyDown(KEY_THREE)) choose_opponent(3);
+        }
+
         // FIZIKS
         ball_physics();
         serve_routine();
@@ -369,6 +411,13 @@ int main(int argc, char * argv[]) {
         draw_scores();
         draw_ball();
         draw_winner();
+
+        if(start_menu) {
+            DrawText("Select Opponent:\n", 100, 300, 20, WHITE);
+            DrawText("\t1) Slowbro\n", 100, 320, 20, WHITE);
+            DrawText("\t2) The Dice\n", 100, 340, 20, WHITE);
+            DrawText("\t3) Singularity\n", 100, 360, 20, WHITE);
+        }
 
         if(serve_timer > 0){
             //DrawText(TextFormat("%d", serve_timer), 100, 500, 20, WHITE);
